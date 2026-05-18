@@ -1,32 +1,62 @@
 import { Request, Response } from "express";
 import Notification from "../models/notification.model";
+import { AuthRequest } from "../middleware/auth.middleware";
 
-// ================= GET NOTIFICATIONS =================
-export const getNotifications = async (req: any, res: Response) => {
+// CREATE NOTIFICATION
+export const createNotification = async (req: AuthRequest, res: Response) => {
   try {
-    const notifications = await Notification.find({
-      userId: req.user.id,
-    }).sort({ createdAt: -1 });
+    const { message, type } = req.body;
 
-    res.json({ notifications });
+    const userId = req.user?.id;
+
+    if (!userId) {
+      return res.status(401).json({
+        message: "Unauthorized",
+      });
+    }
+
+    const validType = (type as "info" | "success" | "warning") || "info";
+
+    const notification = await Notification.create({
+      message,
+      type: validType,
+      userId,
+    });
+
+    res.status(201).json({
+      message: "Notification created",
+      notification,
+    });
+
   } catch (error) {
-    res.status(500).json({ message: "Error fetching notifications" });
+    res.status(500).json({
+      message: "Server Error",
+    });
   }
 };
 
-// ================= CREATE NOTIFICATION =================
-export const createNotification = async (
-  message: string,
-  type: string,
-  userId: string
-) => {
+// GET NOTIFICATIONS
+export const getNotifications = async (req: AuthRequest, res: Response) => {
   try {
-    await Notification.create({
-      message,
-      type,
-      userId,
+    const userId = req.user?.id;
+
+    if (!userId) {
+      return res.status(401).json({
+        message: "Unauthorized",
+      });
+    }
+
+    const notifications = await Notification.find({ userId }).sort({
+      createdAt: -1,
     });
+
+    res.status(200).json({
+      notifications,
+    });
+
   } catch (error) {
-    console.log("Notification error");
+    res.status(500).json({
+      message: "Server Error",
+    });
   }
 };

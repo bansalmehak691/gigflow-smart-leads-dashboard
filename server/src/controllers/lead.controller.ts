@@ -1,26 +1,26 @@
-import { Response } from "express";
+import { Request, Response } from "express";
 import Lead from "../models/lead.model";
-import Notification from "../models/notification.model";
 import { AuthRequest } from "../middleware/auth.middleware";
 
-// ================= CREATE LEAD =================
+// CREATE LEAD
 export const createLead = async (req: AuthRequest, res: Response) => {
   try {
     const { name, email, company, status } = req.body;
+
+    const userId = req.user?.id;
+
+    if (!userId) {
+      return res.status(401).json({
+        message: "Unauthorized",
+      });
+    }
 
     const lead = await Lead.create({
       name,
       email,
       company,
       status: status || "new",
-      assignedTo: req.user.id,
-    });
-
-    // 🔔 NOTIFICATION
-    await Notification.create({
-      message: `New lead created: ${name}`,
-      type: "success",
-      userId: req.user.id,
+      assignedTo: userId,
     });
 
     res.status(201).json({
@@ -35,13 +35,17 @@ export const createLead = async (req: AuthRequest, res: Response) => {
   }
 };
 
-// ================= GET ALL LEADS =================
+// GET ALL LEADS
 export const getLeads = async (req: AuthRequest, res: Response) => {
   try {
-    const leads = await Lead.find().populate(
-      "assignedTo",
-      "name email role"
-    );
+    const userId = req.user?.id;
+
+    if (!userId) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    const leads = await Lead.find()
+      .populate("assignedTo", "name email role");
 
     res.status(200).json({
       leads,
@@ -49,27 +53,21 @@ export const getLeads = async (req: AuthRequest, res: Response) => {
 
   } catch (error) {
     res.status(500).json({
-      message: "Server Error while fetching leads",
+      message: "Server Error",
     });
   }
 };
 
-// ================= UPDATE LEAD STATUS (KANBAN CORE) =================
-export const updateLeadStatus = async (
-  req: AuthRequest,
-  res: Response
-) => {
+// UPDATE LEAD STATUS
+export const updateLeadStatus = async (req: AuthRequest, res: Response) => {
   try {
     const { id } = req.params;
     const { status } = req.body;
 
-    // 🔒 Allowed statuses
-    const allowedStatuses = ["new", "qualified", "closed"];
+    const userId = req.user?.id;
 
-    if (!allowedStatuses.includes(status)) {
-      return res.status(400).json({
-        message: "Invalid status value",
-      });
+    if (!userId) {
+      return res.status(401).json({ message: "Unauthorized" });
     }
 
     const lead = await Lead.findByIdAndUpdate(
@@ -84,13 +82,6 @@ export const updateLeadStatus = async (
       });
     }
 
-    // 🔔 NOTIFICATION
-    await Notification.create({
-      message: `Lead moved to ${status}: ${lead.name}`,
-      type: "info",
-      userId: req.user.id,
-    });
-
     res.status(200).json({
       message: "Lead updated successfully",
       lead,
@@ -98,15 +89,21 @@ export const updateLeadStatus = async (
 
   } catch (error) {
     res.status(500).json({
-      message: "Server Error while updating lead",
+      message: "Server Error",
     });
   }
 };
 
-// ================= DELETE LEAD =================
+// DELETE LEAD
 export const deleteLead = async (req: AuthRequest, res: Response) => {
   try {
     const { id } = req.params;
+
+    const userId = req.user?.id;
+
+    if (!userId) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
 
     const lead = await Lead.findByIdAndDelete(id);
 
@@ -116,20 +113,13 @@ export const deleteLead = async (req: AuthRequest, res: Response) => {
       });
     }
 
-    // 🔔 NOTIFICATION
-    await Notification.create({
-      message: `Lead deleted: ${lead.name}`,
-      type: "warning",
-      userId: req.user.id,
-    });
-
     res.status(200).json({
       message: "Lead deleted successfully",
     });
 
   } catch (error) {
     res.status(500).json({
-      message: "Server Error while deleting lead",
+      message: "Server Error",
     });
   }
 };

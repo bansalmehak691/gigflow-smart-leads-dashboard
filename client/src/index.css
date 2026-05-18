@@ -1,0 +1,57 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* =========================
+   GLOBAL BASE STYLES
+   ========================= */
+
+html {
+  scroll-behavior: smooth;
+}
+
+/* Smooth theme transition (important for SaaS feel) */
+html,
+body {
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* DEFAULT LIGHT MODE */
+body {
+  margin: 0;
+  padding: 0;
+  font-family: sans-serif;
+
+  background-color: #f5f5f5;
+  color: #111827;
+}
+
+/* =========================
+   DARK MODE OVERRIDE
+   (works with Tailwind darkMode: "class")
+   ========================= */
+.dark body {
+  background-color: #0b1220; /* deep SaaS dark */
+  color: #f3f4f6;
+}
+
+/* =========================
+   OPTIONAL: Better UI defaults
+   ========================= */
+
+/* Smooth buttons */
+button {
+  transition: all 0.2s ease;
+}
+
+/* Inputs default cleanup */
+input, select, textarea {
+  outline: none;
+}
+
+/* Better focus ring for accessibility */
+input:focus,
+select:focus,
+textarea:focus {
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.4);
+}
